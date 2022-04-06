@@ -1,3 +1,5 @@
+page-loader:
+	page-loader --output /var/tmp https://ru.hexlet.io/courses
 install:
 	poetry install
 build:
@@ -13,5 +15,7 @@ asci:
 	asciinema rec
 push:
 	git push -u origin main
-page-loader:
-    poetry run page-loader
+lint:
+	poetry run flake8 page_loader
+test:
+	poetry run pytest -vv
