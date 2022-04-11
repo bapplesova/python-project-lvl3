@@ -1,41 +1,36 @@
 #!/usr/bin/env python3
 from page_loader.cli import get_arg_parser
+from page_loader.path_handler import make_result_path
+from page_loader.path_handler import create_dir
+from page_loader.data_handler import download_data
+from page_loader.data_handler import download_img
+from page_loader.data_handler import write_in_file
+
 import os
-import re
-import requests
+from bs4 import BeautifulSoup
 
 
 def download(web_page, output_path):
-    result_path = make_result_path(web_page, output_path)
-    r = requests.get(web_page)
-    f = open(result_path, "w")
-    f.write(r.text)
-    f.close()
-    return result_path
+    file_path, dir_path = make_result_path(web_page, output_path)
+    html_data = download_data(web_page)
+    create_dir(dir_path)
+
+    soup = BeautifulSoup(html_data, 'html.parser')
+    for link in soup.find_all('img'):
+        img_path = download_img(web_page, link['src'], dir_path)
+        link['src'] = img_path
+    write_in_file(file_path, soup.prettify(formatter="minimal"))
+
+    print('DIR_PATH', dir_path)
+    print('RES_PATH', file_path)
+    return file_path
 
 
 def main():
     args = get_arg_parser()
     output_path = args.output
     web_page = args.web_page
-    result_path = download(web_page, output_path)
-#    print('output_f', output_path)
-#    print('web_page', web_page)
-    print('result_path', result_path)
-
-
-def make_result_path(web_page, output_path):
-    count_parts = web_page.count('/')
-    web_page_tmp = os.path.splitext(web_page)[0]
-    total_path = ''
-    while count_parts != 1:
-        count_parts -= 1
-        addr = os.path.split(web_page_tmp)
-        total_path = addr[-1] + '-' + total_path
-        web_page_tmp = addr[0]
-    total_path = re.sub('[^a-zA-Z0-9]', '-', total_path)[:-1]
-    total_path = output_path + '/' + total_path + '.html'
-    return total_path
+    download(web_page, output_path)
 
 
 if __name__ == '__main__':
